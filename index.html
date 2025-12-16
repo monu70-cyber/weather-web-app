@@ -7,13 +7,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
+/* 🌍 BODY FIX (NO FLEX CENTER CONFLICT) */
 body {
   font-family: 'Poppins', sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
   margin: 0;
+  display: flex;
+  justify-content: center;
   background: linear-gradient(135deg, #fceabb, #f8b500);
   transition: background 0.8s ease;
 }
@@ -22,20 +22,28 @@ body.night {
   background: linear-gradient(135deg, #1f1c2c, #432889);
 }
 
+/* 🟢 PAGE SWITCH FIX */
 .page-container {
-  display: none;
+  position: absolute;
   max-width: 360px;
   width: 90%;
-  animation: fadeIn 0.5s ease-out;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.97);
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.page-container.active { display: block; }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.page-container.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
 }
 
+#details-page {
+  margin-top: 40px;
+}
+
+/* ✨ CARD */
 .input-card {
   background: rgba(255,255,255,0.95);
   padding: 30px;
@@ -44,6 +52,7 @@ body.night {
   text-align: center;
 }
 
+/* 🔍 INPUT */
 #city-input {
   width: 100%;
   padding: 12px;
@@ -53,6 +62,7 @@ body.night {
   text-align: center;
 }
 
+/* 🔘 BUTTON */
 #search-btn {
   width: 100%;
   padding: 12px;
@@ -64,6 +74,7 @@ body.night {
   cursor: pointer;
 }
 
+/* 🌤 WEATHER DISPLAY */
 h2 { color: white; text-align: center; }
 
 #weather-icon {
@@ -84,6 +95,7 @@ h2 { color: white; text-align: center; }
   color: #f1f1f1;
 }
 
+/* 🌫 AQI */
 #aqi-display {
   margin: 15px 0;
   padding: 12px;
@@ -99,6 +111,7 @@ h2 { color: white; text-align: center; }
 .aqi-4 { background:#ff8a3d; }
 .aqi-5 { background:#ff5555; }
 
+/* 📊 DATA GRID */
 .data-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -120,10 +133,12 @@ h2 { color: white; text-align: center; }
   text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
+/* 🧠 AI COLORS */
 #ai-weather { color:#00eaff; }
 #ai-clothing { color:#90ee90; }
 #ai-activity { color:#ffb347; }
 
+/* 🔙 BACK */
 #back-btn {
   margin-top: 20px;
   width: 100%;
@@ -139,6 +154,7 @@ h2 { color: white; text-align: center; }
 
 <body>
 
+<!-- 🔍 INPUT PAGE -->
 <div id="input-page" class="page-container active">
   <div class="input-card">
     <h1>Dynamic Weather 🌤️</h1>
@@ -147,6 +163,7 @@ h2 { color: white; text-align: center; }
   </div>
 </div>
 
+<!-- 🌦 DETAILS PAGE -->
 <div id="details-page" class="page-container">
   <h2 id="city-name"></h2>
   <img id="weather-icon">
@@ -200,7 +217,6 @@ const aiClothing = document.getElementById("ai-clothing");
 const aiActivity = document.getElementById("ai-activity");
 
 let currentWeather;
-
 const AQI_STATUS = {1:"Good",2:"Fair",3:"Moderate",4:"Poor",5:"Very Poor"};
 
 searchBtn.onclick = async () => {
@@ -211,7 +227,6 @@ searchBtn.onclick = async () => {
   if (!res.ok) return alert("City not found");
 
   currentWeather = await res.json();
-
   document.body.classList.toggle("night", currentWeather.weather[0].icon.endsWith("n"));
 
   cityName.textContent = currentWeather.name;
@@ -227,8 +242,7 @@ searchBtn.onclick = async () => {
 
   const { lat, lon } = currentWeather.coord;
   const aqiRes = await fetch(`${AQI_URL}?lat=${lat}&lon=${lon}&appid=${API_KEY}`);
-  const aqiData = await aqiRes.json();
-  const level = aqiData.list[0].main.aqi;
+  const level = (await aqiRes.json()).list[0].main.aqi;
 
   aqiDisplay.textContent = `AQI: ${level} (${AQI_STATUS[level]})`;
   aqiDisplay.className = `aqi-${level}`;
