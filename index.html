@@ -103,7 +103,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // ================= CONFIGURATION =================
 // ⚠️ WARNING: In a production app, never expose API keys in frontend code.
 // For this local demo, replace "YOUR_GEMINI_KEY" below.
-const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"; 
+const GEMINI_API_KEY = "AIzaSyBywx-ar8EuFvCGZlC5q9UYDtaEPCmsiZs"; 
 const OWM_API_KEY = "043aa3f3dfcc0cc451d7c3c8d2dab5a2"; // Your OWM Key
 
 const WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather";
@@ -212,7 +212,7 @@ async function handleChat() {
     }
 
     // Check if API Key is set
-    if(GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE") {
+    if(GEMINI_API_KEY === "AIzaSyBywx-ar8EuFvCGZlC5q9UYDtaEPCmsiZs") {
         addMsg("Error: You need to set the GEMINI_API_KEY in the code.", "bot");
         return;
     }
