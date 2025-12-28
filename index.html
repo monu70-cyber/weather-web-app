@@ -3,179 +3,65 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dynamic Weather App</title>
+<title>Dynamic Weather & AI Assistant</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
-body{
-  font-family:Poppins,sans-serif;
-  min-height:100vh;
-  margin:0;
-  display:flex;
-  justify-content:center;
-  background:linear-gradient(135deg,#fceabb,#f8b500);
-}
-.page-container{
-  position:absolute;
-  max-width:360px;
-  width:90%;
-  opacity:0;
-  pointer-events:none;
-  transform:scale(.97);
-  transition:.3s;
-}
-.page-container.active{
-  opacity:1;
-  pointer-events:auto;
-  transform:scale(1);
-}
-.input-card{
-  background:#fff;
-  padding:30px;
-  border-radius:20px;
-  text-align:center;
-  box-shadow:0 15px 30px rgba(0,0,0,.25);
-}
-#city-input{
-  width:100%;
-  padding:12px;
-  border-radius:10px;
-  border:1px solid #ddd;
-  margin-bottom:15px;
-}
-#search-btn{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  font-size:18px;
-  color:white;
-  background:#ff9966;
-  cursor:pointer;
-}
-h2{color:white;text-align:center}
-#weather-icon{display:block;margin:auto;width:100px}
-#temperature{
-  font-size:72px;
-  color:white;
-  text-align:center;
-}
-#feels-like,#description{text-align:center;color:#f1f1f1}
-
-/* AQI */
-#aqi-card{
-  background:rgba(0,0,0,.35);
-  border-radius:15px;
-  padding:15px;
-  margin:15px 0;
-  color:white;
-}
-.aqi-bar{
-  position:relative;
-  height:8px;
-  border-radius:10px;
-  background:linear-gradient(90deg,#1e7f32,#7bc043,#fdd64b,#ff8a3d,#d32f2f);
-}
-#aqi-dot{
-  position:absolute;
-  top:50%;
-  width:14px;
-  height:14px;
-  background:white;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
-}
-
-/* GRID */
-.data-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
-  padding:15px;
-  border-radius:12px;
-  background:rgba(0,0,0,.35);
-}
-.data-item span{font-size:12px;color:#ffd966}
-.data-item strong{font-size:17px;color:white}
-
-#back-btn{
-  margin-top:20px;
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  background:#654321;
-  color:white;
-  cursor:pointer;
-}
-
-/* CHATBOT */
-#chatbot{
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  width:280px;
-  background:#111;
-  border-radius:15px;
-  color:white;
-  overflow:hidden;
-  font-size:13px;
-}
-#chat-header{
-  background:#ff9966;
-  padding:10px;
-  text-align:center;
-  font-weight:600;
-}
-#chat-body{
-  max-height:220px;
-  overflow-y:auto;
-  padding:10px;
-}
-.chat-msg{margin-bottom:8px}
-.user-msg{color:#ffd966}
-.bot-msg{color:#90ee90}
-#chat-input-area{
-  display:flex;
-  border-top:1px solid #444;
-}
-#chat-input{
-  flex:1;
-  padding:8px;
-  border:none;
-}
-#chat-send{
-  background:#ff9966;
-  border:none;
-  color:white;
-  padding:8px 12px;
-  cursor:pointer;
-}
+  /* CSS remains mostly the same, added loading state for chat */
+  body{font-family:Poppins,sans-serif;min-height:100vh;margin:0;display:flex;justify-content:center;background:linear-gradient(135deg,#fceabb,#f8b500);}
+  .page-container{position:absolute;max-width:360px;width:90%;opacity:0;pointer-events:none;transform:scale(.97);transition:.3s;}
+  .page-container.active{opacity:1;pointer-events:auto;transform:scale(1);}
+  .input-card{background:#fff;padding:30px;border-radius:20px;text-align:center;box-shadow:0 15px 30px rgba(0,0,0,.25);}
+  #city-input{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;margin-bottom:15px;box-sizing: border-box;}
+  #search-btn{width:100%;padding:12px;border:none;border-radius:10px;font-size:18px;color:white;background:#ff9966;cursor:pointer;}
+  h2{color:white;text-align:center}
+  #weather-icon{display:block;margin:auto;width:100px}
+  #temperature{font-size:72px;color:white;text-align:center;}
+  #feels-like,#description{text-align:center;color:#f1f1f1}
+  #aqi-card{background:rgba(0,0,0,.35);border-radius:15px;padding:15px;margin:15px 0;color:white;}
+  .aqi-bar{position:relative;height:8px;border-radius:10px;background:linear-gradient(90deg,#1e7f32,#7bc043,#fdd64b,#ff8a3d,#d32f2f);margin-top: 10px;}
+  #aqi-dot{position:absolute;top:50%;width:14px;height:14px;background:white;border-radius:50%;transform:translate(-50%,-50%);transition: left 0.5s ease;}
+  .data-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:15px;border-radius:12px;background:rgba(0,0,0,.35);}
+  .data-item span{font-size:12px;color:#ffd966}
+  .data-item strong{font-size:17px;color:white}
+  #back-btn{margin-top:20px;width:100%;padding:12px;border:none;border-radius:12px;background:#654321;color:white;cursor:pointer;}
+  
+  /* CHATBOT STYLES */
+  #chatbot{position:fixed;bottom:20px;right:20px;width:280px;background:#111;border-radius:15px;color:white;overflow:hidden;font-size:13px;box-shadow: 0 10px 20px rgba(0,0,0,0.4); z-index: 100;}
+  #chat-header{background:#ff9966;padding:10px;text-align:center;font-weight:600; display:flex; justify-content: space-between; align-items: center;}
+  #chat-status { font-size: 10px; opacity: 0.8; }
+  #chat-body{height:250px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
+  .chat-msg{padding: 8px 12px; border-radius: 10px; max-width: 85%; line-height: 1.4;}
+  .user-msg{align-self: flex-end; background: #444; color: #ffd966; border-bottom-right-radius: 2px;}
+  .bot-msg{align-self: flex-start; background: #222; color: #90ee90; border-bottom-left-radius: 2px;}
+  #chat-input-area{display:flex;border-top:1px solid #333;}
+  #chat-input{flex:1;padding:12px;border:none;background: #222; color: white; outline: none;}
+  #chat-send{background:#ff9966;border:none;color:white;padding:0 15px;cursor:pointer;font-weight: bold;}
+  #chat-send:disabled { background: #555; cursor: not-allowed;}
 </style>
 </head>
-
 <body>
 
-<!-- INPUT PAGE -->
 <div id="input-page" class="page-container active">
   <div class="input-card">
     <h1>Dynamic Weather 🌤️</h1>
-    <input id="city-input" placeholder="Enter city name">
+    <input id="city-input" placeholder="Enter city name (e.g., London)">
     <button id="search-btn">Show Weather</button>
   </div>
 </div>
 
-<!-- DETAILS PAGE -->
 <div id="details-page" class="page-container">
   <h2 id="city-name"></h2>
-  <img id="weather-icon">
+  <img id="weather-icon" alt="Weather Icon">
   <div id="temperature"></div>
   <div id="feels-like"></div>
   <div id="description"></div>
 
   <div id="aqi-card">
-    <div id="aqi-title"></div>
-    <div id="aqi-message"></div>
+    <div style="display:flex; justify-content:space-between;">
+      <strong id="aqi-title">AQI</strong>
+      <span id="aqi-message"></span>
+    </div>
     <div class="aqi-bar"><div id="aqi-dot"></div></div>
   </div>
 
@@ -189,87 +75,189 @@ h2{color:white;text-align:center}
   <button id="back-btn">← New Search</button>
 </div>
 
-<!-- CHATBOT -->
 <div id="chatbot">
-  <div id="chat-header">🌦️ Weather Assistant</div>
-  <div id="chat-body"></div>
+  <div id="chat-header">
+    <span>🤖 Weather AI</span>
+    <span id="chat-status">Ready</span>
+  </div>
+  <div id="chat-body">
+    <div class="chat-msg bot-msg">Hello! Search for a city, then ask me anything about the weather there.</div>
+  </div>
   <div id="chat-input-area">
-    <input id="chat-input" placeholder="Ask about clothes, jogging..." />
+    <input id="chat-input" placeholder="Ask Gemini..." />
     <button id="chat-send">➤</button>
   </div>
 </div>
 
-<script>
-const API_KEY="043aa3f3dfcc0cc451d7c3c8d2dab5a2";
-const WEATHER_URL="https://api.openweathermap.org/data/2.5/weather";
-const AQI_URL="https://api.openweathermap.org/data/2.5/air_pollution";
-const ICON_URL="https://openweathermap.org/img/wn/";
-const qs=id=>document.getElementById(id);
+<script type="importmap">
+  {
+    "imports": {
+      "@google/generative-ai": "https://esm.run/@google/generative-ai"
+    }
+  }
+</script>
 
-let currentWeather=null;
-let lastAQI=0;
+<script type="module">
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/* WEATHER */
-qs("search-btn").onclick=async()=>{
-  const city=qs("city-input").value.trim();
-  if(!city){alert("Enter city name");return;}
+// ================= CONFIGURATION =================
+// ⚠️ WARNING: In a production app, never expose API keys in frontend code.
+// For this local demo, replace "YOUR_GEMINI_KEY" below.
+const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"; 
+const OWM_API_KEY = "043aa3f3dfcc0cc451d7c3c8d2dab5a2"; // Your OWM Key
 
-  const res=await fetch(`${WEATHER_URL}?q=${city}&appid=${API_KEY}&units=metric`);
-  if(!res.ok){alert("City not found");return;}
-  currentWeather=await res.json();
+const WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather";
+const AQI_URL = "https://api.openweathermap.org/data/2.5/air_pollution";
+const ICON_URL = "https://openweathermap.org/img/wn/";
 
-  qs("city-name").textContent=currentWeather.name;
-  qs("weather-icon").src=`${ICON_URL}${currentWeather.weather[0].icon}@2x.png`;
-  qs("temperature").textContent=Math.round(currentWeather.main.temp)+"°C";
-  qs("feels-like").textContent=`Feels like ${Math.round(currentWeather.main.feels_like)}°C`;
-  qs("description").textContent=currentWeather.weather[0].description;
-  qs("humidity").textContent=currentWeather.main.humidity+"%";
-  qs("wind").textContent=currentWeather.wind.speed+" m/s";
-  qs("pressure").textContent=currentWeather.main.pressure+" hPa";
-  qs("visibility").textContent=(currentWeather.visibility/1000).toFixed(1)+" km";
+// Initialize Gemini
+let genAI, model;
+try {
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+} catch (e) {
+    console.error("Gemini Init Error: Missing Key?", e);
+}
 
-  const {lat,lon}=currentWeather.coord;
-  const aqiRes=await fetch(`${AQI_URL}?lat=${lat}&lon=${lon}&appid=${API_KEY}`);
-  const aqiData=await aqiRes.json();
-  lastAQI=Math.min(Math.round(aqiData.list[0].components.pm2_5*4),500);
+// State
+let currentWeatherData = null;
+let currentAqiData = null;
 
-  qs("aqi-title").textContent="AQI "+lastAQI;
-  qs("aqi-message").textContent=lastAQI>150?"Poor air quality":"Air quality acceptable";
-  qs("aqi-dot").style.left=(lastAQI/500*100)+"%";
+// Helper
+const qs = id => document.getElementById(id);
 
-  qs("input-page").classList.remove("active");
-  qs("details-page").classList.add("active");
+// ================= WEATHER LOGIC =================
+qs("search-btn").onclick = async () => {
+    const city = qs("city-input").value.trim();
+    if (!city) { alert("Please enter a city name"); return; }
+    
+    qs("search-btn").textContent = "Loading...";
+
+    try {
+        // 1. Fetch Weather
+        const res = await fetch(`${WEATHER_URL}?q=${city}&appid=${OWM_API_KEY}&units=metric`);
+        if (!res.ok) throw new Error("City not found");
+        currentWeatherData = await res.json();
+
+        // 2. Update UI
+        updateWeatherUI(currentWeatherData);
+
+        // 3. Fetch AQI
+        const { lat, lon } = currentWeatherData.coord;
+        const aqiRes = await fetch(`${AQI_URL}?lat=${lat}&lon=${lon}&appid=${OWM_API_KEY}`);
+        const aqiData = await aqiRes.json();
+        
+        // Approx AQI calculation
+        const pm25 = aqiData.list[0].components.pm2_5;
+        currentAqiData = Math.min(Math.round(pm25 * 4), 500); 
+        updateAqiUI(currentAqiData);
+
+        // Transition Pages
+        qs("input-page").classList.remove("active");
+        qs("details-page").classList.add("active");
+        
+        // Reset Chat for new city
+        addMsg(`I now have weather data for ${currentWeatherData.name}. Ask me should you go for a run, or what to wear!`, "bot");
+
+    } catch (error) {
+        alert(error.message);
+    } finally {
+        qs("search-btn").textContent = "Show Weather";
+    }
 };
 
-qs("back-btn").onclick=()=>{
-  qs("details-page").classList.remove("active");
-  qs("input-page").classList.add("active");
+function updateWeatherUI(data) {
+    qs("city-name").textContent = data.name + ", " + data.sys.country;
+    qs("weather-icon").src = `${ICON_URL}${data.weather[0].icon}@2x.png`;
+    qs("temperature").textContent = Math.round(data.main.temp) + "°C";
+    qs("feels-like").textContent = `Feels like ${Math.round(data.main.feels_like)}°C`;
+    qs("description").textContent = data.weather[0].description.toUpperCase();
+    qs("humidity").textContent = data.main.humidity + "%";
+    qs("wind").textContent = data.wind.speed + " m/s";
+    qs("pressure").textContent = data.main.pressure + " hPa";
+    qs("visibility").textContent = (data.visibility / 1000).toFixed(1) + " km";
+}
+
+function updateAqiUI(aqi) {
+    qs("aqi-title").textContent = "AQI " + aqi;
+    qs("aqi-message").textContent = aqi > 100 ? "Unhealthy" : "Good";
+    qs("aqi-dot").style.left = Math.min((aqi / 300) * 100, 100) + "%"; // Scale to 300 for visualization
+}
+
+qs("back-btn").onclick = () => {
+    qs("details-page").classList.remove("active");
+    qs("input-page").classList.add("active");
+    qs("city-input").value = "";
+    currentWeatherData = null; // Clear context
 };
 
-/* CHATBOT */
-const chatBody=qs("chat-body");
-qs("chat-send").onclick=()=>{
-  const msg=qs("chat-input").value.trim().toLowerCase();
-  if(!msg||!currentWeather) return;
+// ================= GEMINI CHAT LOGIC =================
+const chatBody = qs("chat-body");
+const chatInput = qs("chat-input");
+const sendBtn = qs("chat-send");
 
-  addMsg("You: "+msg,"user");
-  qs("chat-input").value="";
+sendBtn.onclick = handleChat;
+chatInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") handleChat();
+});
 
-  let reply="Ask about temperature, clothes or jogging.";
+async function handleChat() {
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+    
+    // Check if weather data exists
+    if (!currentWeatherData) {
+        addMsg("Please search for a city first so I know the context!", "bot");
+        return;
+    }
 
-  if(msg.includes("temperature")) reply=`Temperature is ${Math.round(currentWeather.main.temp)}°C`;
-  else if(msg.includes("clothes")) reply=currentWeather.main.temp>30?"Wear light clothes":"Wear a jacket";
-  else if(msg.includes("jog")) reply=lastAQI>150?"Avoid jogging due to AQI":"Jogging is safe";
+    // Check if API Key is set
+    if(GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE") {
+        addMsg("Error: You need to set the GEMINI_API_KEY in the code.", "bot");
+        return;
+    }
 
-  addMsg("Bot: "+reply,"bot");
-};
+    addMsg(msg, "user");
+    chatInput.value = "";
+    chatInput.disabled = true;
+    qs("chat-status").textContent = "Thinking...";
 
-function addMsg(text,type){
-  const d=document.createElement("div");
-  d.className="chat-msg "+(type==="user"?"user-msg":"bot-msg");
-  d.textContent=text;
-  chatBody.appendChild(d);
-  chatBody.scrollTop=chatBody.scrollHeight;
+    try {
+        // Construct System Context
+        const context = `
+        You are a weather assistant. 
+        Current Weather Data for ${currentWeatherData.name}:
+        - Temp: ${currentWeatherData.main.temp}°C
+        - Weather: ${currentWeatherData.weather[0].description}
+        - Wind: ${currentWeatherData.wind.speed} m/s
+        - Humidity: ${currentWeatherData.main.humidity}%
+        - Calculated AQI: ${currentAqiData}
+        
+        User Question: "${msg}"
+        
+        Answer comfortably in plain text (no markdown) in under 40 words. Give advice based on the specific data above.
+        `;
+
+        const result = await model.generateContent(context);
+        const response = result.response.text();
+        addMsg(response, "bot");
+
+    } catch (error) {
+        console.error(error);
+        addMsg("Sorry, I couldn't reach Gemini. Check console.", "bot");
+    } finally {
+        chatInput.disabled = false;
+        qs("chat-status").textContent = "Ready";
+        chatInput.focus();
+    }
+}
+
+function addMsg(text, type) {
+    const d = document.createElement("div");
+    d.className = "chat-msg " + (type === "user" ? "user-msg" : "bot-msg");
+    d.textContent = text;
+    chatBody.appendChild(d);
+    chatBody.scrollTop = chatBody.scrollHeight;
 }
 </script>
 
