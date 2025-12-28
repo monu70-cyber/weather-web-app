@@ -550,7 +550,7 @@ function addMsg(text, type) {
 
 </body>
 </html> -->
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -905,6 +905,412 @@ qs("chat-send").onclick = async () => {
     } else {
         context = "User has not searched for anything yet.";
     }
+
+    const prompt = `Context: ${context} \nUser Question: ${msg} \nAnswer in under 30 words.`;
+    
+    try {
+        const result = await model.generateContent(prompt);
+        addMsg(result.response.text(), "bot");
+    } catch(e) { addMsg("Error connecting to AI.", "bot"); }
+};
+
+function addMsg(text, type) {
+    const d = document.createElement("div");
+    d.className = `chat-msg ${type === "user" ? "user-msg" : "bot-msg"}`;
+    d.textContent = text;
+    qs("chat-body").appendChild(d);
+    qs("chat-body").scrollTop = qs("chat-body").scrollHeight;
+}
+</script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Glass Weather</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* --- GLOBAL STYLES --- */
+  body {
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Dark, deep gradient background */
+    background: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+    color: white;
+    overflow-x: hidden;
+  }
+
+  /* --- PAGE CONTAINERS & TRANSITIONS --- */
+  .page-container {
+    position: absolute;
+    width: 90%;
+    max-width: 800px; /* Wider for the grid layout */
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.95);
+    transition: all 0.4s ease-in-out;
+    display: none;
+  }
+  .page-container.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+    display: block;
+  }
+
+  /* --- GLASSMORPHISM CARD STYLE --- */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.1); /* Low opacity white */
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 20px;
+    color: white;
+  }
+
+  /* --- INPUT PAGE SPECIFIC --- */
+  .input-card-content {
+    text-align: center;
+    max-width: 400px;
+    margin: auto;
+  }
+  input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  input::placeholder { color: rgba(255, 255, 255, 0.6); }
+  button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn-primary { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); }
+  .btn-primary:hover { background: rgba(255, 255, 255, 0.3); }
+
+  /* --- DETAILS PAGE GRID LAYOUT --- */
+  .weather-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .main-temp-box { display: flex; align-items: center; }
+  #weather-icon { width: 80px; height: 80px; }
+  #temperature { font-size: 48px; font-weight: 700; line-height: 1; }
+  .city-name { font-size: 24px; opacity: 0.9; }
+  .weather-desc { font-size: 14px; opacity: 0.7; }
+
+  /* Grid for weather cards */
+  .weather-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  /* --- INDIVIDUAL CARD STYLES --- */
+  .card-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .card-value {
+    font-size: 28px;
+    font-weight: 700;
+  }
+  .card-subtext {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 5px;
+  }
+
+  /* Gauges (Simple CSS representation) */
+  .gauge-container {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    float: right;
+  }
+  .gauge-ring {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 5px solid rgba(255,255,255,0.1);
+    box-sizing: border-box;
+  }
+  .gauge-fill {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 5px solid;
+    border-color: transparent;
+    box-sizing: border-box;
+    transform: rotate(-90deg); /* Start from top */
+  }
+  /* Specific gauge colors based on the image */
+  .aqi-gauge .gauge-fill { border-top-color: #e74c3c; border-right-color: #f1c40f; } /* Red/Yellow */
+  .humidity-gauge .gauge-fill { border-top-color: #3498db; } /* Blue */
+  .uv-gauge .gauge-fill { border-top-color: #9b59b6; } /* Purple */
+
+  /* Back Button */
+  #back-home-btn {
+    background: rgba(255, 255, 255, 0.1);
+    margin-top: 20px;
+    width: auto;
+    padding: 10px 20px;
+  }
+
+  /* --- CHATBOT (Dark Theme) --- */
+  #chatbot {
+    position: fixed; bottom: 20px; right: 20px; width: 300px;
+    background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px);
+    border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
+    z-index: 100; overflow: hidden;
+  }
+  #chat-header {
+    background: rgba(255,255,255,0.1); padding: 12px; font-weight: 600;
+    text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  #chat-body {
+    height: 250px; overflow-y: auto; padding: 15px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .chat-msg { padding: 8px 12px; border-radius: 10px; max-width: 80%; font-size: 13px; }
+  .bot-msg { background: rgba(255,255,255,0.1); align-self: flex-start; }
+  .user-msg { background: rgba(52, 152, 219, 0.4); align-self: flex-end; }
+  #chat-input-area { display: flex; border-top: 1px solid rgba(255,255,255,0.1); }
+  #chat-input {
+    flex: 1; padding: 12px; background: transparent; border: none;
+    color: white; outline: none;
+  }
+  #chat-send {
+    width: auto; padding: 0 15px; background: rgba(255,255,255,0.1);
+    border-left: 1px solid rgba(255,255,255,0.1); color: white;
+  }
+</style>
+</head>
+<body>
+
+<div id="home-page" class="page-container active">
+  <div class="glass-card input-card-content">
+    <h1>Dark Weather</h1>
+    <input id="city-input" placeholder="Enter city name...">
+    <button id="search-btn" class="btn-primary">Search</button>
+  </div>
+</div>
+
+<div id="details-page" class="page-container">
+  <div class="glass-card weather-header">
+    <div>
+      <div class="city-name" id="city-name"></div>
+      <div class="weather-desc" id="description"></div>
+    </div>
+    <div class="main-temp-box">
+      <img id="weather-icon" alt="icon">
+      <div id="temperature"></div>
+    </div>
+  </div>
+
+  <div class="weather-grid">
+    <div class="glass-card">
+      <span class="card-label">Feels Like</span>
+      <div class="card-value" id="feels-like"></div>
+      <div class="card-subtext">Typical for this weather.</div>
+    </div>
+
+    <div class="glass-card">
+      <span class="card-label">Wind</span>
+      <div class="card-value" id="wind"></div>
+      <div class="card-subtext">Current wind speed.</div>
+    </div>
+
+    <div class="glass-card">
+      <div class="gauge-container humidity-gauge">
+        <div class="gauge-ring"></div>
+        <div class="gauge-fill" id="humidity-fill"></div>
+      </div>
+      <span class="card-label">Humidity</span>
+      <div class="card-value" id="humidity"></div>
+      <div class="card-subtext">Atmospheric moisture.</div>
+    </div>
+
+    <div class="glass-card">
+      <div class="gauge-container aqi-gauge">
+        <div class="gauge-ring"></div>
+        <div class="gauge-fill" id="aqi-fill"></div>
+      </div>
+      <span class="card-label">AQI</span>
+      <div class="card-value" id="aqi-value"></div>
+      <div class="card-subtext" id="aqi-label"></div>
+    </div>
+    
+    <div class="glass-card">
+      <span class="card-label">Visibility</span>
+      <div class="card-value" id="visibility"></div>
+      <div class="card-subtext">Distance you can see.</div>
+    </div>
+
+    <div class="glass-card">
+      <div class="gauge-container uv-gauge">
+        <div class="gauge-ring"></div>
+        <div class="gauge-fill" style="transform: rotate(45deg);"></div> </div>
+      <span class="card-label">UV Index</span>
+      <div class="card-value">3</div> <div class="card-subtext">Moderate.</div>
+    </div>
+  </div>
+
+  <button id="back-home-btn">← Back</button>
+</div>
+
+<div id="chatbot">
+  <div id="chat-header">🤖 Weather AI</div>
+  <div id="chat-body">
+    <div class="chat-msg bot-msg">I'm ready. Search for a city!</div>
+  </div>
+  <div id="chat-input-area">
+    <input id="chat-input" placeholder="Ask about the weather..." />
+    <button id="chat-send">➤</button>
+  </div>
+</div>
+
+<script type="importmap">
+  { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
+</script>
+
+<script type="module">
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// --- CONFIG ---
+const GEMINI_API_KEY = "YOUR_GEMINI_KEY"; // 🔴 PUT YOUR KEY HERE
+const OWM_API_KEY = "043aa3f3dfcc0cc451d7c3c8d2dab5a2";
+
+// --- INIT ---
+let genAI, model;
+try {
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+} catch(e) { console.error("Gemini Error", e); }
+
+let currentWeatherData = null;
+let currentAqiData = 0;
+
+const qs = id => document.getElementById(id);
+const showPage = (id) => {
+    document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active'));
+    qs(id).classList.add('active');
+};
+
+// --- SEARCH LOGIC ---
+qs("search-btn").onclick = async () => {
+    const city = qs("city-input").value.trim();
+    if (!city) return alert("Enter a city");
+    
+    qs("search-btn").textContent = "Searching...";
+    try {
+        const wData = await fetchWeather(city);
+        currentWeatherData = wData;
+        const aqiVal = await fetchAQI(wData.coord.lat, wData.coord.lon);
+        currentAqiData = aqiVal;
+
+        updateDetailsUI(wData, aqiVal);
+        showPage("details-page");
+        addMsg(`Loaded weather for ${city}.`, "bot");
+    } catch (e) { alert(e.message); }
+    finally { qs("search-btn").textContent = "Search"; }
+};
+
+// --- API FUNCTIONS ---
+async function fetchWeather(city) {
+    const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${OWM_API_KEY}&units=metric`);
+    if (!res.ok) throw new Error("City not found");
+    return await res.json();
+}
+
+async function fetchAQI(lat, lon) {
+    const res = await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${OWM_API_KEY}`);
+    const data = await res.json();
+    // Simple US AQI estimation from PM2.5
+    const pm25 = data.list[0].components.pm2_5;
+    if (pm25 <= 12) return Math.round((50/12)*pm25);
+    if (pm25 <= 35.4) return Math.round(((100-51)/(35.4-12.1))*(pm25-12.1)+51);
+    if (pm25 <= 55.4) return Math.round(((150-101)/(55.4-35.5))*(pm25-35.5)+101);
+    return Math.round(((200-151)/(150.4-55.5))*(pm25-55.5)+151);
+}
+
+// --- UI UPDATES ---
+function updateDetailsUI(w, aqi) {
+    // Main Header
+    qs("city-name").textContent = w.name;
+    qs("weather-icon").src = `https://openweathermap.org/img/wn/${w.weather[0].icon}@2x.png`;
+    qs("temperature").textContent = Math.round(w.main.temp) + "°";
+    qs("description").textContent = w.weather[0].description;
+
+    // Grid Cards
+    qs("feels-like").textContent = Math.round(w.main.feels_like) + "°";
+    qs("wind").textContent = w.wind.speed + " km/h";
+    qs("visibility").textContent = (w.visibility / 1000).toFixed(1) + " km";
+
+    // Humidity Gauge
+    qs("humidity").textContent = w.main.humidity + "%";
+    // Rotate fill based on percentage (simple representation)
+    qs("humidity-fill").style.transform = `rotate(${w.main.humidity * 1.8}deg)`; 
+
+    // AQI Gauge
+    qs("aqi-value").textContent = aqi;
+    qs("aqi-label").textContent = getAqiLabel(aqi);
+    // Cap rotation for visual purposes
+    const aqiRotation = Math.min(aqi, 200) * 0.9; 
+    qs("aqi-fill").style.transform = `rotate(${aqiRotation}deg)`;
+}
+
+function getAqiLabel(aqi) {
+    if(aqi <= 50) return 'Good';
+    if(aqi <= 100) return 'Moderate';
+    if(aqi <= 150) return 'Unhealthy for Sensitive';
+    return 'Unhealthy';
+}
+
+qs("back-home-btn").onclick = () => showPage("home-page");
+
+// --- CHATBOT LOGIC ---
+qs("chat-send").onclick = async () => {
+    const input = qs("chat-input");
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    if (GEMINI_API_KEY.includes("YOUR_GEMINI")) return alert("Set API Key first!");
+
+    addMsg(msg, "user");
+    input.value = "";
+    
+    let context = currentWeatherData 
+        ? `City: ${currentWeatherData.name}, Temp: ${currentWeatherData.main.temp}°C, AQI: ${currentAqiData}.`
+        : "No city selected yet.";
 
     const prompt = `Context: ${context} \nUser Question: ${msg} \nAnswer in under 30 words.`;
     
