@@ -263,7 +263,7 @@ function addMsg(text, type) {
 
 </body>
 </html> -->
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -548,5 +548,379 @@ function addMsg(text, type) {
 }
 </script>
 
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather & AQI Compare</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* GLOBAL STYLES */
+  body{font-family:Poppins,sans-serif;min-height:100vh;margin:0;display:flex;justify-content:center;background:linear-gradient(135deg,#fceabb,#f8b500);overflow-x:hidden;}
+  
+  /* CONTAINER TRANSITIONS */
+  .page-container{position:absolute;max-width:400px;width:95%;opacity:0;pointer-events:none;transform:scale(.95);transition:.3s ease-in-out; display:none;}
+  .page-container.active{opacity:1;pointer-events:auto;transform:scale(1); display:block; position:relative;}
+
+  /* CARDS */
+  .card{background:#fff;padding:25px;border-radius:20px;box-shadow:0 15px 30px rgba(0,0,0,.25); text-align:center;}
+  
+  /* INPUTS & BUTTONS */
+  input{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;margin-bottom:10px;box-sizing:border-box;font-family:inherit;}
+  button{width:100%;padding:12px;border:none;border-radius:10px;font-size:16px;font-weight:600;color:white;cursor:pointer;transition:.2s;}
+  button:active{transform:scale(0.98);}
+  
+  .btn-primary{background:#ff9966;}
+  .btn-secondary{background:#654321; margin-top:10px;}
+  .btn-accent{background:#4a90e2; margin-bottom:10px;}
+
+  /* HOME PAGE */
+  h1{margin:0 0 20px 0; font-size: 24px;}
+  
+  /* DETAILS PAGE */
+  #weather-icon{width:100px;margin:auto;display:block;}
+  #temperature{font-size:64px;color:white;font-weight:700;}
+  .weather-desc{color:#f0f0f0; margin-bottom:15px;}
+  
+  /* AQI WIDGET (Single City) */
+  #aqi-card{background:rgba(0,0,0,.3);border-radius:15px;padding:15px;color:white;margin-bottom:15px;}
+  .aqi-bar{height:8px;background:linear-gradient(90deg,#00e400,#ffff00,#ff7e00,#ff0000,#8f3f97,#7e0023);border-radius:10px;position:relative;margin-top:8px;}
+  #aqi-dot{width:14px;height:14px;background:#fff;border-radius:50%;position:absolute;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 5px rgba(0,0,0,0.5);}
+
+  /* MULTI-CITY COMPARE PAGE */
+  #compare-list { max-height: 400px; overflow-y: auto; padding: 5px; }
+  .city-input-group { display: flex; gap: 5px; margin-bottom: 5px; }
+  .remove-btn { width: 40px; background: #ff4444; }
+  
+  .aqi-result-card { 
+      padding: 15px; 
+      margin-bottom: 10px; 
+      border-radius: 12px; 
+      color: white; 
+      display: flex; 
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .aqi-score { font-size: 24px; font-weight: bold; }
+  .aqi-city { font-size: 18px; font-weight: 600; }
+  .aqi-status { font-size: 12px; opacity: 0.9; }
+
+  /* AQI COLOR CLASSES */
+  .bg-good { background: #00c853; }      /* 0-50 */
+  .bg-mod { background: #ffd600; color: #333; } /* 51-100 */
+  .bg-sens { background: #ff6d00; }      /* 101-150 */
+  .bg-unhealthy { background: #d50000; } /* 151-200 */
+  .bg-very { background: #aa00ff; }      /* 201-300 */
+  .bg-haz { background: #3e2723; }       /* 300+ */
+
+  /* CHATBOT */
+  #chatbot{position:fixed;bottom:20px;right:20px;width:280px;background:#111;border-radius:15px;color:white;z-index:100;box-shadow:0 10px 20px rgba(0,0,0,0.4);font-size:13px;}
+  #chat-header{background:#ff9966;padding:10px;font-weight:600;text-align:center;}
+  #chat-body{height:220px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
+  .chat-msg{padding:8px 12px;border-radius:10px;max-width:85%;}
+  .bot-msg{background:#222;color:#90ee90;align-self:flex-start;}
+  .user-msg{background:#444;color:#ffd966;align-self:flex-end;}
+  #chat-input-area{display:flex;border-top:1px solid #333;}
+  #chat-input{flex:1;padding:10px;background:#222;border:none;color:white;outline:none;}
+  #chat-send{width:auto;padding:0 15px;border-radius:0;background:#ff9966;}
+
+  /* Utilities */
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div id="home-page" class="page-container active">
+  <div class="card">
+    <h1>Weather & Air Quality</h1>
+    <input id="city-input" placeholder="Enter city name (e.g., Tokyo)">
+    <button id="search-btn" class="btn-primary">Get Weather</button>
+    <div style="margin: 15px 0; color: #888;">— OR —</div>
+    <button id="btn-goto-compare" class="btn-accent">Compare 5 Cities AQI 📊</button>
+  </div>
+</div>
+
+<div id="details-page" class="page-container">
+  <h2 id="city-name" style="color:white;text-align:center;text-shadow:0 2px 4px rgba(0,0,0,0.2);"></h2>
+  <img id="weather-icon" alt="icon">
+  <div id="temperature" style="text-align:center;"></div>
+  <div id="description" class="weather-desc" style="text-align:center;"></div>
+
+  <div id="aqi-card">
+    <div style="display:flex;justify-content:space-between;">
+      <strong id="aqi-title">AQI</strong>
+      <span id="aqi-message">Loading...</span>
+    </div>
+    <div class="aqi-bar"><div id="aqi-dot"></div></div>
+  </div>
+
+  <div class="card" style="background:rgba(0,0,0,0.3);color:white;padding:15px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>Humidity: <strong id="humidity"></strong></div>
+      <div>Wind: <strong id="wind"></strong></div>
+    </div>
+  </div>
+
+  <button id="back-home-btn" class="btn-secondary">← Back</button>
+</div>
+
+<div id="compare-page" class="page-container">
+  <div class="card">
+    <h3>Compare Air Quality</h3>
+    <div id="compare-inputs">
+      </div>
+    <button id="add-city-btn" style="background:#ddd;color:#333;margin-bottom:10px;">+ Add Another City</button>
+    <button id="compare-btn" class="btn-primary">Compare Now</button>
+    
+    <div id="compare-results" style="margin-top:20px;"></div>
+    
+    <button id="back-compare-btn" class="btn-secondary">← Back Home</button>
+  </div>
+</div>
+
+<div id="chatbot">
+  <div id="chat-header">🤖 Gemini AI Assistant</div>
+  <div id="chat-body">
+    <div class="chat-msg bot-msg">Hi! Ask me about weather or AQI differences.</div>
+  </div>
+  <div id="chat-input-area">
+    <input id="chat-input" placeholder="Type a message..." />
+    <button id="chat-send">➤</button>
+  </div>
+</div>
+
+<script type="importmap">
+  { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
+</script>
+
+<script type="module">
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// ================= CONFIG =================
+// ⚠️ IMPORTANT: Paste your Gemini API key inside the quotes below
+const GEMINI_API_KEY = "AIzaSyBywx-ar8EuFvCGZlC5q9UYDtaEPCmsiZs"; 
+const OWM_API_KEY = "043aa3f3dfcc0cc451d7c3c8d2dab5a2";
+
+// Initialize Gemini
+let genAI, model;
+try {
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+} catch(e) { console.error("Gemini Error", e); }
+
+// State
+let currentWeatherData = null;
+let currentAqiData = 0;
+let comparisonData = []; // Stores last comparison result for AI context
+
+// DOM Helpers
+const qs = id => document.getElementById(id);
+const showPage = (id) => {
+    document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active'));
+    qs(id).classList.add('active');
+};
+
+// ================= 1. SINGLE CITY SEARCH =================
+qs("search-btn").onclick = async () => {
+    const city = qs("city-input").value.trim();
+    if (!city) return alert("Enter a city");
+    
+    qs("search-btn").textContent = "Loading...";
+    try {
+        const wData = await fetchWeather(city);
+        currentWeatherData = wData;
+        const aqiVal = await fetchAQI(wData.coord.lat, wData.coord.lon);
+        currentAqiData = aqiVal;
+
+        updateDetailsUI(wData, aqiVal);
+        showPage("details-page");
+        
+        // AI Intro
+        addMsg(`Here is the weather for ${city}. AQI is ${aqiVal}.`, "bot");
+    } catch (e) { alert(e.message); }
+    finally { qs("search-btn").textContent = "Get Weather"; }
+};
+
+// ================= 2. COMPARE CITIES LOGIC =================
+const inputContainer = qs("compare-inputs");
+let cityInputs = ["New York", "Mumbai"]; // Default start
+
+function renderInputs() {
+    inputContainer.innerHTML = "";
+    cityInputs.forEach((city, idx) => {
+        const div = document.createElement("div");
+        div.className = "city-input-group";
+        div.innerHTML = `
+            <input value="${city}" onchange="updateCityArr(${idx}, this.value)" placeholder="City ${idx+1}">
+            ${cityInputs.length > 2 ? `<button class="remove-btn" onclick="removeCity(${idx})">×</button>` : ''}
+        `;
+        inputContainer.appendChild(div);
+    });
+}
+// Expose functions to window for HTML onclicks
+window.updateCityArr = (i, val) => cityInputs[i] = val;
+window.removeCity = (i) => { cityInputs.splice(i, 1); renderInputs(); };
+
+qs("add-city-btn").onclick = () => {
+    if (cityInputs.length >= 5) return alert("Max 5 cities allowed");
+    cityInputs.push("");
+    renderInputs();
+};
+
+qs("btn-goto-compare").onclick = () => {
+    showPage("compare-page");
+    renderInputs();
+};
+
+qs("compare-btn").onclick = async () => {
+    const cities = cityInputs.filter(c => c.trim() !== "");
+    if (cities.length < 2) return alert("Enter at least 2 cities");
+
+    const btn = qs("compare-btn");
+    btn.textContent = "Comparing...";
+    qs("compare-results").innerHTML = "";
+    comparisonData = [];
+
+    try {
+        // Fetch all in parallel
+        const promises = cities.map(async (city) => {
+            try {
+                const w = await fetchWeather(city);
+                const aqi = await fetchAQI(w.coord.lat, w.coord.lon);
+                return { city: w.name, aqi, error: null };
+            } catch (e) {
+                return { city, error: "Not Found" };
+            }
+        });
+
+        const results = await Promise.all(promises);
+        comparisonData = results; // Save for AI
+
+        // Render Results
+        results.sort((a, b) => (a.aqi || 0) - (b.aqi || 0)); // Sort Good to Bad
+        
+        results.forEach(res => {
+            const el = document.createElement("div");
+            if (res.error) {
+                el.className = "aqi-result-card";
+                el.style.background = "#555";
+                el.innerHTML = `<span>${res.city}</span><span>Not Found</span>`;
+            } else {
+                const colorClass = getAqiColorClass(res.aqi);
+                el.className = `aqi-result-card ${colorClass}`;
+                el.innerHTML = `
+                    <div class="aqi-city">${res.city}</div>
+                    <div style="text-align:right">
+                        <div class="aqi-score">${res.aqi}</div>
+                        <div class="aqi-status">${getAqiLabel(res.aqi)}</div>
+                    </div>
+                `;
+            }
+            qs("compare-results").appendChild(el);
+        });
+
+        addMsg(`I've compared the AQI for these cities. ${results[0].city} has the cleanest air!`, "bot");
+
+    } catch (e) { console.error(e); }
+    finally { btn.textContent = "Compare Now"; }
+};
+
+// ================= API HELPERS =================
+async function fetchWeather(city) {
+    const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${OWM_API_KEY}&units=metric`);
+    if (!res.ok) throw new Error(`City ${city} not found`);
+    return await res.json();
+}
+
+async function fetchAQI(lat, lon) {
+    const res = await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${OWM_API_KEY}`);
+    const data = await res.json();
+    return calculateUS_AQI(data.list[0].components.pm2_5);
+}
+
+// US AQI Calc (Simplified)
+function calculateUS_AQI(pm25) {
+    if (pm25 <= 12.0) return calc(50, 0, 12, 0, pm25);
+    if (pm25 <= 35.4) return calc(100, 51, 35.4, 12.1, pm25);
+    if (pm25 <= 55.4) return calc(150, 101, 55.4, 35.5, pm25);
+    if (pm25 <= 150.4) return calc(200, 151, 150.4, 55.5, pm25);
+    return pm25 > 250 ? 300 : 200; 
+}
+function calc(Ih, Il, Ch, Cl, C) {
+    return Math.round(((Ih - Il) / (Ch - Cl)) * (C - Cl) + Il);
+}
+
+function getAqiColorClass(aqi) {
+    if(aqi <= 50) return 'bg-good';
+    if(aqi <= 100) return 'bg-mod';
+    if(aqi <= 150) return 'bg-sens';
+    if(aqi <= 200) return 'bg-unhealthy';
+    return 'bg-haz';
+}
+function getAqiLabel(aqi) {
+    if(aqi <= 50) return 'Good';
+    if(aqi <= 100) return 'Moderate';
+    if(aqi <= 150) return 'Sensitive Groups';
+    return 'Unhealthy';
+}
+
+// ================= UI UPDATERS =================
+function updateDetailsUI(w, aqi) {
+    qs("city-name").textContent = w.name;
+    qs("weather-icon").src = `https://openweathermap.org/img/wn/${w.weather[0].icon}@4x.png`;
+    qs("temperature").textContent = Math.round(w.main.temp) + "°";
+    qs("description").textContent = w.weather[0].description;
+    qs("humidity").textContent = w.main.humidity + "%";
+    qs("wind").textContent = w.wind.speed + "m/s";
+    
+    qs("aqi-title").textContent = "AQI " + aqi;
+    qs("aqi-message").textContent = getAqiLabel(aqi);
+    qs("aqi-dot").style.left = Math.min((aqi/300)*100, 100) + "%";
+}
+
+qs("back-home-btn").onclick = () => showPage("home-page");
+qs("back-compare-btn").onclick = () => showPage("home-page");
+
+// ================= CHATBOT =================
+qs("chat-send").onclick = async () => {
+    const input = qs("chat-input");
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    if (GEMINI_API_KEY.includes("YOUR_GEMINI")) return alert("Set API Key first!");
+
+    addMsg(msg, "user");
+    input.value = "";
+    
+    let context = "";
+    if (qs("compare-page").classList.contains("active") && comparisonData.length > 0) {
+        context = `Comparison Data: ${JSON.stringify(comparisonData)}.`;
+    } else if (currentWeatherData) {
+        context = `City: ${currentWeatherData.name}, Temp: ${currentWeatherData.main.temp}, AQI: ${currentAqiData}.`;
+    } else {
+        context = "User has not searched for anything yet.";
+    }
+
+    const prompt = `Context: ${context} \nUser Question: ${msg} \nAnswer in under 30 words.`;
+    
+    try {
+        const result = await model.generateContent(prompt);
+        addMsg(result.response.text(), "bot");
+    } catch(e) { addMsg("Error connecting to AI.", "bot"); }
+};
+
+function addMsg(text, type) {
+    const d = document.createElement("div");
+    d.className = `chat-msg ${type === "user" ? "user-msg" : "bot-msg"}`;
+    d.textContent = text;
+    qs("chat-body").appendChild(d);
+    qs("chat-body").scrollTop = qs("chat-body").scrollHeight;
+}
+</script>
 </body>
 </html>
