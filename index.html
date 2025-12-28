@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -272,6 +272,293 @@ function generateAI(aqi) {
   aiActivity.textContent =
     aqi>=4?"Avoid outdoor activities":
     cond.includes("rain")?"Carry umbrella":"Suitable for outdoor activities";
+}
+</script>
+
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dynamic Weather App</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ===== BASE UI ===== */
+body{
+  font-family:Poppins,sans-serif;
+  min-height:100vh;
+  margin:0;
+  display:flex;
+  justify-content:center;
+  background:linear-gradient(135deg,#fceabb,#f8b500);
+  transition:.8s;
+}
+.page-container{
+  position:absolute;
+  max-width:360px;
+  width:90%;
+  opacity:0;
+  pointer-events:none;
+  transform:scale(.97);
+  transition:.3s;
+}
+.page-container.active{
+  opacity:1;
+  pointer-events:auto;
+  transform:scale(1);
+}
+.input-card{
+  background:rgba(255,255,255,.95);
+  padding:30px;
+  border-radius:20px;
+  text-align:center;
+  box-shadow:0 15px 30px rgba(0,0,0,.25);
+}
+#city-input{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  margin-bottom:15px;
+  text-align:center;
+}
+#search-btn{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-size:18px;
+  color:white;
+  cursor:pointer;
+  background:linear-gradient(45deg,#ff5e62,#ff9966);
+}
+h2{color:white;text-align:center}
+#weather-icon{display:block;margin:auto;width:100px}
+#temperature{
+  font-size:72px;
+  color:white;
+  text-align:center;
+}
+#feels-like,#description{text-align:center;color:#f1f1f1}
+
+/* AQI */
+#aqi-card{
+  background:rgba(0,0,0,.35);
+  border-radius:15px;
+  padding:15px;
+  margin:15px 0;
+  color:white;
+}
+.aqi-bar{
+  position:relative;
+  height:8px;
+  border-radius:10px;
+  background:linear-gradient(90deg,#1e7f32,#7bc043,#fdd64b,#ff8a3d,#d32f2f,#7b1fa2);
+}
+#aqi-dot{
+  position:absolute;
+  top:50%;
+  width:14px;
+  height:14px;
+  background:white;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+}
+
+/* GRID */
+.data-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  padding:15px;
+  border-radius:12px;
+  background:rgba(0,0,0,.35);
+}
+.data-item span{font-size:12px;color:#ffd966}
+.data-item strong{font-size:17px;color:white}
+
+/* BACK */
+#back-btn{
+  margin-top:20px;
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:#654321;
+  color:#fff;
+  cursor:pointer;
+}
+
+/* ===== CHATBOT ===== */
+#chatbot{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  width:280px;
+  background:rgba(0,0,0,0.9);
+  border-radius:15px;
+  overflow:hidden;
+  color:white;
+  font-size:13px;
+  box-shadow:0 10px 25px rgba(0,0,0,.4);
+  z-index:999;
+}
+#chat-header{
+  padding:10px;
+  background:#ff9966;
+  text-align:center;
+  font-weight:600;
+}
+#chat-body{
+  max-height:220px;
+  overflow-y:auto;
+  padding:10px;
+}
+.chat-msg{margin-bottom:8px}
+.user-msg{color:#ffd966}
+.bot-msg{color:#90ee90}
+#chat-input-area{
+  display:flex;
+  border-top:1px solid #444;
+}
+#chat-input{
+  flex:1;
+  border:none;
+  padding:8px;
+}
+#chat-send{
+  border:none;
+  background:#ff9966;
+  color:white;
+  padding:8px 12px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- INPUT PAGE -->
+<div id="input-page" class="page-container active">
+  <div class="input-card">
+    <h1>Dynamic Weather 🌤️</h1>
+    <input id="city-input" placeholder="Enter city name">
+    <button id="search-btn">Show Weather</button>
+  </div>
+</div>
+
+<!-- DETAILS PAGE -->
+<div id="details-page" class="page-container">
+  <h2 id="city-name"></h2>
+  <img id="weather-icon">
+  <div id="temperature"></div>
+  <div id="feels-like"></div>
+  <div id="description"></div>
+
+  <div id="aqi-card">
+    <div id="aqi-title"></div>
+    <div id="aqi-message"></div>
+    <div class="aqi-bar"><div id="aqi-dot"></div></div>
+  </div>
+
+  <div class="data-grid">
+    <div class="data-item"><span>HUMIDITY</span><strong id="humidity"></strong></div>
+    <div class="data-item"><span>WIND</span><strong id="wind"></strong></div>
+    <div class="data-item"><span>PRESSURE</span><strong id="pressure"></strong></div>
+    <div class="data-item"><span>VISIBILITY</span><strong id="visibility"></strong></div>
+  </div>
+
+  <button id="back-btn">← New Search</button>
+</div>
+
+<!-- CHATBOT -->
+<div id="chatbot">
+  <div id="chat-header">🌦️ Weather Assistant</div>
+  <div id="chat-body"></div>
+  <div id="chat-input-area">
+    <input id="chat-input" placeholder="Ask about jogging, clothes..." />
+    <button id="chat-send">➤</button>
+  </div>
+</div>
+
+<script>
+const API_KEY="043aa3f3dfcc0cc451d7c3c8d2dab5a2";
+const WEATHER_URL="https://api.openweathermap.org/data/2.5/weather";
+const AQI_URL="https://api.openweathermap.org/data/2.5/air_pollution";
+const ICON_URL="https://openweathermap.org/img/wn/";
+const qs=id=>document.getElementById(id);
+
+let currentWeather;
+let lastAQI=0;
+
+/* ===== WEATHER LOGIC ===== */
+qs("search-btn").onclick=async()=>{
+  const city=qs("city-input").value.trim();
+  if(!city) return alert("Enter city");
+
+  const res=await fetch(`${WEATHER_URL}?q=${city}&appid=${API_KEY}&units=metric`);
+  if(!res.ok) return alert("City not found");
+  currentWeather=await res.json();
+
+  qs("city-name").textContent=currentWeather.name;
+  qs("weather-icon").src=`${ICON_URL}${currentWeather.weather[0].icon}@2x.png`;
+  qs("temperature").textContent=Math.round(currentWeather.main.temp)+"°C";
+  qs("feels-like").textContent=`Feels like ${Math.round(currentWeather.main.feels_like)}°C`;
+  qs("description").textContent=currentWeather.weather[0].description;
+  qs("humidity").textContent=currentWeather.main.humidity+"%";
+  qs("wind").textContent=currentWeather.wind.speed+" m/s";
+  qs("pressure").textContent=currentWeather.main.pressure+" hPa";
+  qs("visibility").textContent=(currentWeather.visibility/1000).toFixed(1)+" km";
+
+  const {lat,lon}=currentWeather.coord;
+  const aqiRes=await fetch(`${AQI_URL}?lat=${lat}&lon=${lon}&appid=${API_KEY}`);
+  const aqiData=await aqiRes.json();
+  const pm25=aqiData.list[0].components.pm2_5;
+  lastAQI=Math.min(Math.round(pm25*4),500);
+
+  qs("aqi-title").textContent="AQI "+lastAQI;
+  qs("aqi-message").textContent=lastAQI>150?"Poor air quality":"Air quality acceptable";
+  qs("aqi-dot").style.left=(lastAQI/500*100)+"%";
+
+  qs("input-page").classList.remove("active");
+  qs("details-page").classList.add("active");
+};
+
+qs("back-btn").onclick=()=>{
+  qs("details-page").classList.remove("active");
+  qs("input-page").classList.add("active");
+};
+
+/* ===== CHATBOT LOGIC ===== */
+const chatBody=qs("chat-body");
+qs("chat-send").onclick=()=>{
+  const msg=qs("chat-input").value.trim().toLowerCase();
+  if(!msg||!currentWeather) return;
+  addMsg("You: "+msg,"user");
+  qs("chat-input").value="";
+  setTimeout(()=>reply(msg),400);
+};
+
+function addMsg(t,type){
+  const d=document.createElement("div");
+  d.className="chat-msg "+(type==="user"?"user-msg":"bot-msg");
+  d.textContent=t;
+  chatBody.appendChild(d);
+  chatBody.scrollTop=chatBody.scrollHeight;
+}
+
+function reply(msg){
+  const t=currentWeather.main.temp;
+  let r="I can help with weather, clothes, jogging.";
+
+  if(msg.includes("temperature")) r=`Temperature is ${Math.round(t)}°C`;
+  else if(msg.includes("clothes")) r=t>30?"Wear cotton clothes":"Light jacket recommended";
+  else if(msg.includes("jog")) r=lastAQI>150?"Avoid jogging due to AQI":"Good time for jogging";
+
+  addMsg("Bot: "+r,"bot");
 }
 </script>
 
